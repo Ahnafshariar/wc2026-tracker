@@ -39,15 +39,7 @@ npm run dev        # auto-reload via nodemon
 npm test           # unit + integration tests (node:test)
 ```
 
-Use an alternative source:
 
-```bash
-DATA_SOURCE=footballdata FOOTBALL_API_KEY=your_key npm start
-DATA_SOURCE=espn npm start
-DATA_SOURCE=demo npm start          # offline simulator
-```
-
-Tune with `REFRESH_INTERVAL` (live poll ms, default 30000) and `SIM_INTERVAL` (demo tick ms).
 
 ---
 
@@ -67,43 +59,6 @@ Tune with `REFRESH_INTERVAL` (live poll ms, default 30000) and `SIM_INTERVAL` (d
 
 ---
 
-## 🐳 Docker
-
-```bash
-docker build -t wc2026-tracker .
-docker run -p 3000:3000 wc2026-tracker
-```
-
-Runs as a non-root user with a built-in `HEALTHCHECK`.
-
----
-
-## 🔁 CI/CD (GitHub Actions → EC2)
-
-**CI** (`.github/workflows/ci.yml`): on every push/PR — installs deps, runs tests on Node 18 & 20, smoke-tests the server, and builds the Docker image.
-
-**CD** (`.github/workflows/cd-ec2.yml`): after CI passes on `main`, deploys to EC2. Set these repo secrets (Settings → Secrets and variables → Actions):
-
-- `EC2_HOST` — instance public IP/DNS
-- `EC2_USER` — e.g. `ubuntu`
-- `EC2_SSH_KEY` — the private deploy key (**never commit it**)
-
-The CD file also documents the more secure **OIDC + SSM** alternative (no long-lived SSH key), matching the no-SSH pattern from the AWS VPC project.
-
-### Manual EC2 deploy (first time)
-```bash
-# on the EC2 instance
-sudo apt update && sudo apt install -y nodejs npm
-sudo npm install -g pm2
-git clone https://github.com/Ahnafshariar/wc2026-tracker.git
-cd wc2026-tracker
-npm ci --omit=dev
-pm2 start ecosystem.config.js
-pm2 save && pm2 startup
-```
-Put NGINX in front (port 80 → 3000) using the reverse-proxy config from the AWS EC2 project, and open port 80 in the security group.
-
----
 
 ## 📡 Data & providers
 
@@ -116,15 +71,6 @@ The `FOOTBALL_API_KEY` is read from the environment — never commit it. In CI/C
 
 > Group membership always comes from the verified bundled draw, so even if a provider's labels are messy, the groups stay correct; only scores/status are overlaid.
 
-### 🔑 Secret flow: `secret → CI → EC2`
-
-1. **Local:** copy `.env.example` to `.env`, add your key. `.env` is gitignored — never committed.
-2. **GitHub:** store the key as repo secret `FOOTBALL_API_KEY` (Settings → Secrets and variables → Actions), alongside `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`.
-3. **CD (`.github/workflows/cd-ec2.yml`):** after CI passes, the deploy step passes the secret into the EC2 shell (`envs: FOOTBALL_API_KEY`) and writes a locked-down `.env` (`chmod 600`) on the server, then `pm2 ... --update-env`. The key never lands in the repo or the build logs.
-
-CI itself needs no key — tests run on bundled/demo data.
-
----
 
 ## 🗂️ Structure
 
@@ -149,59 +95,4 @@ wc2026-tracker/
 
 *Built by Md Ahnaf Shariar · a DevOps capstone tying together Git, CI/CD, Docker, PM2, NGINX, and AWS EC2.*
 
----
 
-## 🩺 Troubleshooting: "not all matches are showing"
-
-If live mode isn't reflecting every match, hit the diagnostics endpoint:
-
-```bash
-curl http://localhost:3000/api/diagnostics
-```
-
-It returns:
-
-```json
-{
-  "mode": "espn",
-  "lastFetch": "2026-06-13T...",
-  "fetched": 48,        // matches the provider returned
-  "matched": 46,        // matches successfully placed
-  "skipped": 2,         // matches dropped
-  "unmatchedTeamNames": ["Some Name", "Another"],
-  "fetchErrors": []
-}
-```
-
-- **`skipped > 0` with names in `unmatchedTeamNames`** → the provider spells a country differently than the app. Add the spelling to the `ALIAS` map in `src/engine/simulator.js` (e.g., `'cote divoire': "Côte d'Ivoire"`). The app already handles the common variants (United States, Ivory Coast, Turkey, Korea Republic, IR Iran, Cabo Verde, Congo DR, Bosnia and Herzegovina, Curaçao, Czechia…).
-- **`fetched` is low or `fetchErrors` is non-empty** → the provider call is failing or rate-limiting. Prefer **football-data.org** (`DATA_SOURCE=footballdata` + key): one request returns every match with clean stages/groups, far more reliable than ESPN's day-by-day scoreboard.
-- **Everything 0 in `static` mode** → no `DATA_SOURCE` set, so there are no live results. Set `DATA_SOURCE=espn` (keyless) or `footballdata`.
-
-The **Fixtures** tab always lists every match with its status (Soon / LIVE / FT); the **Live** tab shows in-progress games plus the latest results.
-
----
-
-## 🚢 Deploy on EC2 (quick reference)
-
-```bash
-# on the instance
-sudo apt update && sudo apt install -y nodejs npm
-sudo npm install -g pm2
-git clone https://github.com/Ahnafshariar/wc2026-tracker.git
-cd wc2026-tracker
-npm ci                                  # IMPORTANT: installs deps incl. dotenv
-pm2 start ecosystem.config.js           # fork mode, single instance (see note)
-pm2 save && pm2 startup
-```
-
-Put NGINX in front (port 80 → 3000) using `nginx/reverse-proxy-sse.conf` so Server-Sent Events stream correctly, then open port 80 in the security group.
-
-**Run as a single instance.** This app holds tournament state in memory and pushes updates over SSE, so it must run in PM2 **fork mode with `instances: 1`** (the shipped `ecosystem.config.js` does this). Cluster mode would give each worker its own state and break SSE.
-
-**If you hit `EADDRINUSE :3000`** something already holds the port:
-```bash
-pm2 kill
-sudo fuser -k 3000/tcp           # free the port
-pm2 start ecosystem.config.js
-```
-# wc2026-tracker
