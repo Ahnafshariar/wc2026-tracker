@@ -88,7 +88,6 @@ wc2026-tracker/
 │   └── routes/api.js
 ├── public/                   # frontend (index.html, app.js, styles.css)
 ├── test/                     # node:test suites
-└── .github/workflows/        # ci.yml, cd-ec2.yml
 ```
 
 ---
