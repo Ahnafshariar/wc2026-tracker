@@ -1,7 +1,7 @@
-# deps / build
+# Dependencies
 node_modules/
-npm-debug.log*
-# secrets — never commit
+
+# Secrets / environment — never commit real values
 .env
 .env.*
 !.env.example
@@ -11,6 +11,20 @@ npm-debug.log*
 id_rsa*
 *token*
 credentials*
-# os / editor
-.DS_Store
+
+# Logs & PM2 runtime
 *.log
+npm-debug.log*
+.pm2/
+*.pid
+*.seed
+
+# Test / build output
+coverage/
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
