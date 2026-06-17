@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Cup 2026 — Live Tracker</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <h1>🏆 World Cup 2026 <span class="sub">Live Tracker</span></h1>
+      <div class="status">
+        <span class="pill" id="source">…</span>
+        <span class="pill" id="phase">…</span>
+        <span class="pill" id="progress">…</span>
+        <span class="pill" id="conn-badge">⏳ connecting…</span>
+      </div>
+    </div>
+    <div id="champion" class="champion hidden"></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="live">🔴 Live</button>
+    <button class="tab" data-tab="groups">📊 Groups</button>
+    <button class="tab" data-tab="fixtures">📅 Schedule</button>
+    <button class="tab" data-tab="bracket">🏟️ Knockout</button>
+    <button class="tab" data-tab="teams">🌍 Teams</button>
+  </nav>
+
+  <main>
+    <section id="live" class="panel active"></section>
+    <section id="groups" class="panel"></section>
+    <section id="fixtures" class="panel"></section>
+    <section id="bracket" class="panel"></section>
+    <section id="teams" class="panel"></section>
+  </main>
+
+  <footer>
+    Real groups, teams Sample data + live simulatoramp; fixtures · live results via API · <a href="https://github.com/Ahnafshariar" target="_blank" rel="noopener">github.com/Ahnafshariar</a>
+    · built for DevOps CI/CD on AWS EC2
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

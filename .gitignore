@@ -1,0 +1,16 @@
+# deps / build
+node_modules/
+npm-debug.log*
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pub
+id_rsa*
+*token*
+credentials*
+# os / editor
+.DS_Store
+*.log
